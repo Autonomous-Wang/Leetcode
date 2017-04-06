@@ -1,211 +1,195 @@
 #include <iostream>
-#include <cstdlib>
 #include <vector>
-#include <stack>
-
+#include <cstdlib>
 using namespace std;
 
 struct node
 {
-	int data;
-	struct node* left;
-	struct node* right;
+	int val;
+	node *left;
+	node *right;
 };
 
-struct node* newNode(int data)
+node* newnode(int value)
 {
-	struct node* node = new struct node;
-	node->data = data;
-	node->left = NULL;
-	node->right = NULL;
-
-	return node;
+	node* newnode = new(node);
+	newnode->val = value;
+	newnode->left = NULL;
+	newnode->right = NULL;
+	return newnode;
 }
 
-void printPostorder(struct node* node)
+// return the height of root node
+int height(node* root)
 {
-	if (node == NULL)
-		return;
-	printPostorder(node->left);
-	printPostorder(node->right);
-	cout << node->data <<' ';
-}
-
-void printInorder(struct node* node)
-{
-	if (node == NULL)
-		return;
-	printInorder(node->left);
-	cout << node->data << ' ';
-	printInorder(node->right);
-}
-
-void printPreorder(struct node* node)
-{
-	if (node == NULL)
-		return;
-	cout << node->data << ' ';
-	printPreorder(node->left);
-	printPreorder(node->right);
-}
-
-struct node* minim(struct node* root)
-{
-	struct node* x = NULL;
-	while(root->left != NULL)
+	int h = 0;
+	if (root != NULL)
 	{
-		x = root->left;
-		root = root->left; 
-	}	
-	return x;
+		int l = height(root->left);
+		int r = height(root->right);
+		h = max(l, r) + 1;
+	}
+	return h;
 }
 
-
-struct node* search(struct node* root, int data)
+// a single left rotation
+node* rr_rotation(node *parent)
 {
-	if (root == NULL) return NULL;
-	else if (root->data == data) return root;
-	else if (root->data < data) return search(root->right, data);
-	else return search(root->left, data);
+    node *temp;
+    temp = parent->right;
+    parent->right = temp->left;
+    temp->left = parent;
+    return temp;
+}
+
+// Left- Left Rotation and single right rotation
+node* ll_rotation(node *parent)
+{
+    node *temp;
+    temp = parent->left;
+    parent->left = temp->right;
+    temp->right = parent;
+    return temp;
+}
+
+ // Left - Right Rotation
+node* lr_rotation(node *parent)
+{
+    node *temp;
+    temp = parent->left;
+    parent->left = rr_rotation(temp);
+    return ll_rotation(parent);
+}
+
+// Right- Left Rotation
+node* rl_rotation(node *parent)
+{
+    node *temp;
+    temp = parent->right;
+    parent->right = ll_rotation(temp);
+    return rr_rotation(parent);
+}
+
+// the difference between right and left
+int diff(node* root)
+{
+	int l = height(root->left);
+	int r = height(root->right);
+	return l - r;
+}
+
+node* balance(node *temp)
+{
+    int bal_factor = diff(temp);
+    // left heavy
+    if (bal_factor > 1)
+    {
+    	// left sub tree is left heavy
+        if (diff(temp->left) > 0)
+            temp = ll_rotation(temp);
+
+        // left sub tree is left heavy 
+        else
+            temp = lr_rotation(temp);
+    }
+    // righy heavy
+    else if (bal_factor < -1)
+    {
+    	// right sub tree is left heavy
+        if (diff(temp->right) > 0)
+            temp = rl_rotation(temp);
+        else
+            temp = rr_rotation(temp);
+    }
+    return temp;
+}
+
+// tree implementation is a execellent example for recursive
+node* insert(node* root, int data)
+{
+	if(root == NULL) 
+		root = newnode(data);
+
+	else if(data < root->val)
+		root->left = insert(root->left,data);
+	else 
+		root->right = insert(root->right,data);
 	return root;
 }
 
-struct node* Getsuccessor(struct node* root, int data) {
-	// Search the Node - O(h)
-	struct node* current = search(root, data);
-	if(current == NULL) return NULL;
-	if(current->right != NULL)  //Case 1: Node has right subtree
-		return minim(current->right); // O(h)
-	else 
-	{   //Case 2: No right subtree  - O(h)
-		struct node* successor = NULL;
-		struct node* ancestor = root;
-		while(ancestor != current) 
-		{
-			if(current->data < ancestor->data) 
-			{
-				successor = ancestor; // so far this is the deepest node for which current node is in left
-				ancestor = ancestor->left;
-			}
-			else
-				ancestor = ancestor->right;
-		}
-		return successor;
-	}
-}
-
-struct node* Insert(node *root, int data) 
+int countnode(node* root)
 {
-	if(root == NULL) {
-		root = new node();
-		root->data = data;
-		root->left = root->right = NULL;
-	}
-	else if(data <= root->data)
-		root->left = Insert(root->left,data);
-	else 
-		root->right = Insert(root->right,data);
-	return root;
-}
-
-struct node* maxim(struct node* root)
-{
-	struct node* x = NULL;
-	while(root->right != NULL)
+	if (root == NULL)
+		cout << "The tree is empty" << endl;
+	else
 	{
-		x = root->right;
-		root = root->right; 
-	}	
-	return x;
-}
-
-// left root and right
-vector<int> inorderTraversal(struct node *root) 
-{
-	vector<int> vec;
-	stack<node*> stack;
-	struct node* current = root;
-	struct node* p;
-
-	while(!stack.empty() || current)
-	{
-		if (current)
-		{
-			stack.push(current);
-			current = current->left;
-		}
-		else
-		{
-			p = stack.top();
-			vec.push_back(p->data);
-			stack.pop();
-			current = p->right;
-		}
+		int count = 1;
+		count += countnode(root->left);
+		count += countnode(root->right);
+		return count;
 	}
-	return vec;
 }
 
-// root left and right
-vector<int> preorderTraversal(struct node *root) 
+void printvec(vector<int> vec)
 {
-	vector<int> vec;
-	stack<node*> stack;
-	struct node* current = root;
-	struct node* p;
+	int n = vec.size();
+	for (int i = 0; i < n; i++)
+		cout << vec[i] << ' ';
+	cout << endl;
+}
 
-	while(!stack.empty() || current)
+int minim(node* root)
+{
+	if (root == NULL)
+		cout << "The tree is empty" << endl;
+	int min;
+	while (root->left != NULL)
 	{
-		if (current)
-		{
-			stack.push(current);
-			current = current->right;
-		}
-		else
-		{
-			p = stack.top();
-			vec.push_back(p->data);
-			stack.pop();
-			current = p->left;
-		}
+		root = root->left;
+		min = root->val;
 	}
-	return vec;
+	return min;
 }
 
-void postorder(struct node* root, vector<int> &nodes)
+node* search(node* root, int value)
 {
-	if (root == NULL) 
+	if (root == NULL || root->val == value)
+		return root;
+
+	else if (root->val < value)
+		 search(root->right, value);
+	else
+		 search(root->left, value);
+}
+
+void inorder(node* root, vector<int> &re)
+{
+	if (root == NULL)
 		return;
-	postorder(root->left, nodes);
-	postorder(root->right, nodes);
-	nodes.push_back(root->data);
+	inorder(root->left, re);
+	
+	inorder(root->right, re);
+	re.push_back(root->val);
 }
-
-vector<int> post(struct node* root)
+vector<int> inorder_out(node* root)
 {
-	vector<int> nodes;
-	postorder(root, nodes);
-	return nodes;
+	vector<int> re;
+	inorder(root, re);
+	return re;
 }
 
 int main()
 {
-	struct node* root = newNode(3);
-	root->left        = newNode(2);
-	root->right       = newNode(4);
-	root->left->left  = newNode(1);
-	root->left->right = newNode(5);
-	root->right->right = newNode(8);
-	root->right->left = newNode(0);
-	root->right->left->right = newNode(13);
-
-	vector<int> b = post(root);
-	for (int i = 0; i < sizeof(b)/sizeof(int); i++)
-		cout << b[i] << ' ';
-	//struct node* a = minim(root);
+	struct node* root = NULL;
+    root = insert(root, 50);
+    insert(root, 30);
+    insert(root, 20);
+    insert(root, 40);
+    insert(root, 70);
+    insert(root, 60);
+    //insert(root, 80);
+    printvec(inorder_out(root)); 
 }
-
-
-
 
 
 

@@ -1,189 +1,185 @@
+// calculate the document distance from MIT algorithm online course
 #include <iostream>
+#include <vector>
 using namespace std;
- 
-// To heapify a subtree rooted with node i which is
-// an index in arr[]. n is size of heap
-void printArray(int arr[], int n)
+
+void printvec(vector<int> arr)
 {
-    for (int i=0; i<n; ++i)
-        cout << arr[i] << " ";
-    cout << "\n";
+	int n = arr.size();
+	for (int i = 0; i < n; i++)
+		cout << arr[i] << ' ';
+	cout << endl;
 }
 
-void heapify(int arr[], int n, int i) // n is the number element in the array
-                                        // i is the number of parent node selected
+// counting sort based on the given range
+vector<int> countsort(vector<int> arr, int range)
 {
-    int largest = i;  // Initialize largest as root and root should be the smallest
-    int l = 2*i + 1;  // left = 2*i + 1
-    int r = 2*i + 2;  // right = 2*i + 2
- 
-    // If left child is larger than root
-    if (l < n && arr[l] > arr[largest])
-        largest = l;
- 
-    // If right child is larger than largest so far
-    if (r < n && arr[r] > arr[largest])
-        largest = r;
- 
-    // If largest is not root
-    if (largest != i)
+    int n = arr.size();
+    vector<int> res (n, 0);
+    vector<int> count (range, 0);
+
+    for (int i : arr)
+        ++count[i];
+
+    for (int i = 1; i < range; i++)
+        count[i] += count[i - 1];
+
+    for (int i = 0; i < n; i++)
     {
-        swap(arr[i], arr[largest]);
-        // Recursively heapify the affected sub-tree
-        heapify(arr, n, largest);
+        res[count[arr[i]] - 1] = arr[i];
+        count[arr[i]]--;
     }
-}
- 
-// main function to do heap max
-void Buildheap(int arr[], int n)
-{
-    // Build heap (rearrange array)
-    for (int i = n / 2 - 1; i >= 0; i--)
-        heapify(arr, n, i);
+
+    return res;
 }
 
-void heapSort(int arr[], int n)
+// O(n^2) for vector implementation pass by refernce
+// so that we can change the entry of each element
+void insort(vector<int> &arr)
 {
-    // Build heap (rearrange array) and begin from the last parent node
-    for (int i = n / 2 - 1; i >= 0; i--)
-        heapify(arr, n, i);
- 
-    // One by one extract an element from heap
-    // and heapify reducing length of heap
-    for (int i = n - 1; i >= 0; i--)
-    {
-        swap(arr[0], arr[i]);
-        heapify(arr, i, 0);
-        printArray(arr, i);
-    }
+	int n = arr.size();
+	for (int i = 1; i < n; i++)
+	{
+		int j = i - 1;
+		while (i >= 0 && j >= 0 && arr[j] > arr[i])
+		{
+			// swap the entries of vector also need to reduce the index
+			swap(arr[i], arr[j]);
+			i--;
+			j--;
+		}
+	}
 }
 
-// maxheap insert, n is the size after appending new element
-void heapInsert(int arr[], int n, int val)
+// merge two sorted array in O(n)
+// change the entry of arr, don't create new vector
+void merge(vector<int> &arr, int l, int m, int r)
 {
-    int parent_index;
-    int i = n - 1;
-    arr[i] = val;
-    if (n % 2 == 0)
-        parent_index = n / 2 - 1;
-    else
-        parent_index = n / 2;
-    while(parent_index >= 0 && i >= 0 && arr[parent_index] < arr[i])
-    {
-        swap(arr[parent_index], arr[i]);
-        i = parent_index;
-        if (i % 2 == 0)
-            parent_index = i / 2 - 1;
-        else
-            parent_index = i / 2;
-    }
-}
+	int n = arr.size();
+    int ln = m - l + 1;
+    int rn = n - ln;
+    vector<int> L(ln);
+    vector<int> R(rn);
 
-// l, m, k is the index of the corresponding node in the array
-void merge(int arr[], int l, int m, int r)
-{
-    int i, j, k;
-    int n1 = m - l + 1;
-    int n2 =  r - m;
-    int L[n1], R[n2];
-
-    for (i = 0; i < n1; i++)
+    for (int i = 0; i < ln; i++)
         L[i] = arr[l + i];
-    for (j = 0; j < n2; j++)
-        R[j] = arr[m + 1 + j];
-    
-    i = 0; // Initial index of first subarray
-    j = 0; // Initial index of second subarray
-    k = l; // Initial index of merged subarray
-    while (i < n1 && j < n2)
+
+    for (int j = 0; j < rn; j++)
+        R[j] = arr[ln + l + j];
+
+    int i(0), j(0);
+    int k = l;
+
+    while (i < ln && j < rn)
     {
-        if (L[i] <= R[j])
+        if (L[i] < R[j])
         {
             arr[k] = L[i];
             i++;
+            k++;
         }
-        else
+        else 
         {
             arr[k] = R[j];
             j++;
+            k++;
         }
-        k++;
     }
-    while (i < n1)
+
+    while (i < ln)
     {
         arr[k] = L[i];
         i++;
         k++;
     }
-    while (j < n2)
+
+    while (j < rn)
     {
         arr[k] = R[j];
         j++;
         k++;
     }
 }
- 
-/* l is for left index and r is right index of the
-   sub-array of arr to be sorted */
-void mergeSort(int arr[], int l, int r)
+
+// O(nlogn)
+void mergeSort(vector<int> &arr, int l, int r)
 {
     if (l < r)
     {
-        int m = l + (r-l) / 2;
+        int m = l + (r - l) / 2;
         mergeSort(arr, l, m);
-        mergeSort(arr, m+1, r);
+        mergeSort(arr, m + 1, r);
         merge(arr, l, m, r);
-    }
+	}
 }
- 
- void quickSort(int arr[], int left, int right) 
- {
-    int i = left, j = right;
-    int tmp;
-    int pivot = arr[(left + right) / 2];
-    /* partition */
-    while (i <= j) 
+
+void maxheapify(vector<int> &arr, int i, int n)
+{
+    int left = 2 * i + 1;
+    int right = 2 * i + 2;
+    int largest = i;
+
+    if (left < n && arr[left] > arr[largest])
+        largest = left;
+
+    if (right < n && arr[right] > arr[largest])
+        largest = right;
+
+    if (largest != i)
     {
-        while (arr[i] < pivot) // we can not use the equation sign
-            i++;
-        while (arr[j] > pivot)
-            j--;
-        if (i <= j) 
-        {
-            swap(arr[i], arr[j]);
-            i++;
-            j--;
-        }
+        swap(arr[i], arr[largest]);
+        maxheapify(arr, largest, n);
     }
-    if (left < j)
-        quickSort(arr, left, j);
-    if (i < right)
-        quickSort(arr, i, right);
+    return;
 }
- 
-// Driver program
+
+void buildmaxheap(vector<int> &arr, int n)
+{
+    for (int i = n / 2; i >= 0; i--)
+        maxheapify(arr, i, n);
+}
+
+void heapsort(vector<int> &arr)
+{
+    int n = arr.size();
+    buildmaxheap(arr, n);
+
+    for (int i = n - 1; i > 0; i--)
+    {
+        swap(arr[i], arr[0]);
+        maxheapify(arr, 0, i);
+    }
+}
+
+void quicksort(vector<int> &arr, int l, int r)
+{
+    int mid = l + (r - l) / 2;
+    int pivo = arr[mid];
+    int i = l;
+    int j = r;
+
+    while (i <= j)
+    {
+        while (arr[i] < pivo) {i++;}
+        while (arr[j] > pivo) {j--;}
+        swap(arr[i], arr[j]);
+        i++;
+        j--;
+    }
+
+    if (l < j)
+        quicksort(arr, l, j);
+    if (i < r)
+        quicksort(arr, i, r);
+}
+
 int main()
 {
-    int arr[] = {8, 11, 8, 5, 6, 7};
-    int n = sizeof(arr)/sizeof(arr[0]);
-    cout << "Original array is \n";
-    printArray(arr, n);
-    //cout << "Maxheap array is \n";
-    //Buildheap(arr, n);
-    //printArray(arr, n);
-    //int ar[n + 1];
-    //ar[n] = 0;
-    //for (int i = 0; i < n; i++)
-      //  ar[i] = arr[i];
-    //printArray(ar, n + 1);
-    //heapInsert(ar, n + 1, 30);
-    quickSort(arr, 0, 5);
-    //mergeSort(arr, 0, 5);
-    cout << "Inserted array is \n";
-    printArray(arr, n);
+	vector<int> a = {5, 12, 4, 6, 10, 3};
+	int n = a.size();
+	quicksort(a, 0, n - 1);
+    printvec(a);
 }
-
-
 
 
 
